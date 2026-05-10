@@ -1,0 +1,32 @@
+name: Lionel-Hunter-Bot-Automated
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Se ejecuta automáticamente cada 6 horas
+  workflow_dispatch:      # Botón para ejecutarlo manualmente cuando quieras
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v3
+
+      - name: Instalar Nuclei (Ultima Version)
+        run: |
+          curl -LO https://github.com/projectdiscovery/nuclei/releases/download/v3.2.9/nuclei_3.2.9_linux_amd64.zip
+          unzip nuclei_3.2.9_linux_amd64.zip
+          sudo mv nuclei /usr/local/bin/
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar dependencias de Python
+        run: pip install requests
+
+      - name: Ejecutar el Escáner
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python scanner_elite.py
