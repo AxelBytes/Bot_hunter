@@ -15,21 +15,25 @@ def actualizar_lista_objetivos():
         response = requests.get(url_json)
         data = response.json()
         targets_limpios = []
+        
         for programa in data:
-            # Solo si el programa ofrece recompensas en dinero ($$$)
-            if programa.get('offers_bounties', False):
-                for asset in programa.get('targets', {}).get('in_scope', []):
-                    if asset.get('type') == 'url':
-                        # Limpiamos el asterisco de subdominios y protocolos
-                        id_asset = asset.get('asset_identifier')
-                        clean_url = id_asset.replace("*.", "").replace("https://", "").replace("http://", "").strip("/")
+            # Quitamos el filtro de 'offers_bounties' temporalmente para testear
+            targets = programa.get('targets', {}).get('in_scope', [])
+            for asset in targets:
+                # Aceptamos cualquier cosa que parezca un dominio
+                identifier = asset.get('asset_identifier', '')
+                if identifier and (asset.get('type') == 'url' or '.' in identifier):
+                    clean_url = identifier.replace("*.", "").replace("https://", "").replace("http://", "").strip("/")
+                    # Evitamos cosas raras como emails o archivos
+                    if "/" not in clean_url and "@" not in clean_url:
                         targets_limpios.append(clean_url)
         
-        # Guardamos en un archivo plano para que Nuclei lo procese
+        lista_final = list(set(targets_limpios))
         with open("targets.txt", "w") as f:
-            for t in set(targets_limpios): # set() para no repetir dominios
+            for t in lista_final:
                 f.write(f"{t}\n")
-        print(f"✅ {len(set(targets_limpios))} objetivos listos para auditar.")
+        
+        print(f"✅ {len(lista_final)} objetivos listos para auditar.")
     except Exception as e:
         print(f"❌ Error al descargar lista: {e}")
 
